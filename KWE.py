@@ -19,7 +19,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     	timestep.append(time_min*j)
     	j+=1
     
-    #print (timestep)
+    #Adds time steps in minutes as the input data only works in hours.
     q=pd.DataFrame(0, index=range(len(up)*len(timestep)-(len(timestep)-1)), columns=["YEAR", "MONTH", "DAY", "HOUR","MINUTE","Upstream","Downstream"])
     for i in range(len(up)):
     	for t in range(len(timestep)):
@@ -50,6 +50,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
    
     lat_input=pd.DataFrame(0, index=pd.to_datetime(q.iloc[:,0:5]), columns=diststep)
     
+    #Organizes inflows by time and distance
     for i in range(len(lat_flows)):
         for j in range (len(lat_input.columns.values)):
             for k in range(len(lat_input)):
@@ -80,10 +81,11 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     #print(qroute.iloc[1,0])
     #print(step+alpha*beta*((qroute.iloc[0,1]+qroute.iloc[1,0])/2)**(0.6-1))
     
+    #Acutall routing of the streeam
     for j in range(len(q)-1):
         for i in range(len(diststep)-1):
             qroute.iloc[(j+1),(i+1)]=(step*qroute.iloc[(j+1),i]+alpha*beta*qroute.iloc[j,(i+1)]*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))/(step+alpha*beta*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))
-            qroute.iloc[j+1,i+1]+=lat_input.iloc[j+1,i+1]
+            qroute.iloc[j+1,i+1]+=lat_input.iloc[j+1,i+1] #Insert inflow
             flow_depth=((roughness*qroute.iloc[j+1,i+1])/(1.49*(slope**0.5)*300))**0.6
             celerity=((1.49*(slope**0.5))/(roughness))*(5.0/3.0)*(flow_depth**(2.0/3.0))
             if (time_min*60)>(dist_ft/celerity): #Check Courant Condition
