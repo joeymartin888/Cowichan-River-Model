@@ -88,7 +88,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
             celerity=((1.49*(slope**0.5))/(roughness))*(5.0/3.0)*(flow_depth**(2.0/3.0))
             if (time_min*60)>(dist_ft/celerity): #Check Courant Condition
                 print("Courant condition broken. delta x/Celerity = %f" % (dist_ft/celerity))
-                return
+    #            return
     
     
     #print(qroute/(width*flow_depth))
