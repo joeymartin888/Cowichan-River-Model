@@ -13,19 +13,23 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as fig
 import matplotlib.dates as mdates
 
-data=pd.read_csv("River_routing_data.csv")
-length=5280*10
-cross=30*10
-time_min=3
-dist_step_min=5280/4
+data=pd.read_csv("River_routing_data.csv") #using the Assignment 3 Data right now...
+length=52800 #River Length
+width=300 #River Width
+time_min=3 #delta t
+dist_step_min=5280 #delta x
+slope=0.005
+roughness=0.025 #Manning’s roughness constant (this is Lehigh River value)
 
-lat_flows=np.matrix([[4000,0],[500,0],[52000,10000]])
+lat_flows=pd.DataFrame([[8000,pd.Timestamp('2008-03-06T07'),10000],[10000,pd.Timestamp('2008-03-05T06'),3000],[52000,pd.Timestamp('2008-03-06T09'),20000]]) #[distance on the river, flow]
+"""Inflows can be put into the DataFrame in the format [distance along river, time 
+(type Timestamp), Q_cfs]. Any number can be put in."""
 
-test=KWE.route(time_min, dist_step_min, length, cross, data, lat_flows)
+test=KWE.route(time_min, dist_step_min, length, width, slope, roughness, data, lat_flows)
 
 print(test)
 
-"""Question 2: Plot the upstream and downstream hydrographs on the same plot."""
+"""Plot the upstream and downstream hydrographs on the same plot."""
 
 x=test["Time"]
 fig, ax = plt.subplots()
@@ -39,14 +43,3 @@ plt.title("Stream Routing of Lehigh River from Lake Cowichan to Duncan")
 plt.legend()
 plt.show()
 
-"""Question 3: What is the speed of the flood wave? You may approximate
-this with the time between the two peaks of the hydrographs."""
-"""
-flood_up=newq["Time"].where(newq["Walnutport"]==max(newq["Walnutport"]))
-flood_down=newq["Time"].where(newq["Whitehall"]==max(newq["Whitehall"]))
-f=flood_down.dropna()
-g=flood_up.dropna()
-flood_time=f.iloc[0]-g.iloc[0]
-j=flood_time.seconds
-flood_speed=Length/flood_time.seconds
-print("The flood wave travelled at %0.2f cfs." % flood_speed)  """
