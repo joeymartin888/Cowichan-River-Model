@@ -81,7 +81,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     #print(qroute.iloc[1,0])
     #print(step+alpha*beta*((qroute.iloc[0,1]+qroute.iloc[1,0])/2)**(0.6-1))
     
-    #Acutall routing of the streeam
+    #Acutal routing of the stream
     for j in range(len(q)-1):
         for i in range(len(diststep)-1):
             qroute.iloc[(j+1),(i+1)]=(step*qroute.iloc[(j+1),i]+alpha*beta*qroute.iloc[j,(i+1)]*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))/(step+alpha*beta*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))
@@ -101,7 +101,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     newq["Upstream"]=q["Upstream"]
     newq["Downstream"]=qroute[Length]
     
-    return newq
+    return qroute
     #return v_matrix
 
 #q["Whitehall"]=qroute.iloc[:,(len(qroute.columns)-1)]
