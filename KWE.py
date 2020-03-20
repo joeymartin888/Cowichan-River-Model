@@ -33,21 +33,21 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     			break
     		q.iloc[(i*len(timestep)+t),5]=((up.iloc[i+1,4]-up.iloc[i,4])*t)/(len(timestep))+up.iloc[i,4]
     
-    #print (q)
-    
-    #print(q)
-    
+
     diststep=[]
     k=0
     while dist_ft*k<=Length:
     	diststep.append(dist_ft*k)
     	k+=1
     #print (diststep)
-    
+
+  
+   
     
     qroute=pd.DataFrame(0, index=range(len(q)), columns=diststep)
     v_matrix=pd.DataFrame(0, index=range(len(q)), columns=diststep)
-   
+    
+ 
     lat_input=pd.DataFrame(0, index=pd.to_datetime(q.iloc[:,0:5]), columns=diststep)
     
     #Organizes inflows by time and distance
@@ -74,8 +74,9 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     qroute.iloc[:,0]=q.iloc[:,5]
     step=(time_min*60.0)/dist_ft
     #print(step)
-    alpha=4.13 #temp
     beta=0.6 #confirm
+    alpha=((roughness*(width**(2.0/3.0)))/(1.49*(slope**0.5)))**beta #temp
+    print(alpha)
     
     
     #print(qroute.iloc[1,0])
@@ -90,7 +91,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
             celerity=((1.49*(slope**0.5))/(roughness))*(5.0/3.0)*(flow_depth**(2.0/3.0))
             if (time_min*60)>(dist_ft/celerity): #Check Courant Condition
                 print("Courant condition broken. delta x/Celerity = %f" % (dist_ft/celerity))
-    #            return
+                return
     
     
     #print(qroute/(width*flow_depth))
@@ -101,6 +102,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     newq["Upstream"]=q["Upstream"]
     newq["Downstream"]=qroute[Length]
     
+    #return newq
     return qroute
     #return v_matrix
 
