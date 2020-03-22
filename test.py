@@ -23,7 +23,7 @@ roughness=0.025 #Manning’s roughness constant (this is Lehigh River value)'
 decay_coeff=0.015
 E=7.5
 
-lat_flows=pd.DataFrame([[8000,pd.Timestamp('2008-03-06T07'),0],[10000,pd.Timestamp('2008-03-05T06'),0],[52000,pd.Timestamp('2008-03-06T09'),0]])
+lat_flows=pd.DataFrame([[8000,pd.Timestamp('2008-03-06T07'),0],[25000,pd.Timestamp('2008-03-05T06'),0],[52000,pd.Timestamp('2008-03-06T09'),0]])
 """Inflows can be put into the DataFrame in the format [distance along river, time 
 (type Timestamp), Q_cfs]. Any number can be put in."""
 
