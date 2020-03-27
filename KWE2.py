@@ -33,19 +33,21 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     			break
     		q.iloc[(i*len(timestep)+t),5]=((up.iloc[i+1,4]-up.iloc[i,4])*t)/(len(timestep))+up.iloc[i,4]
     """
+    
     start=up.iloc[0,0]
+    print(start)
 
     end=up.iloc[(len(up)-1),0]
-
-    x=up.set_index(pd.date_range(start,end, freq='5min'))
+    print(end)
+        
+    x=up.set_index(pd.to_datetime(up['Date (PST)']))
     del x[u'Date (PST)']
     del x[u'Parameter ']
     new_index = pd.date_range(start, end, freq=('%smin' % time_min))
     
-    
-
     q=x.reindex(new_index).interpolate()
     
+    print(q)
        
     diststep=[]
     k=0
