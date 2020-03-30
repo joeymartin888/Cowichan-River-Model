@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as fig
 import matplotlib.dates as mdates
 
-data=pd.read_csv("08HA002_QR_Mar-27-2020_07_14_05PM.csv") #5 minute data
+data=pd.read_csv("08HA002_QR_Mar-23-2020_08_24_37PM.csv") #5 minute data
+C_month=pd.read_csv("Monthly_Nitrogen_Loading.csv")#, parse_dates=["Month"])
 time_min=0.5 #delta t
 dist_step=3800 #delta x
 length=38000+dist_step #River Length
@@ -31,7 +32,8 @@ lat_flows=pd.DataFrame([[8000,pd.Timestamp('2020-03-17T07'),0],[25000,pd.Timesta
 
 test=KWE.route(time_min, dist_step, length, width, slope, roughness, data, lat_flows) #returns the q route matrix
 
-v_matrix=test/(0.15*width*1000) # 6-9 m/s #artificially lowered
+v_matrix=test
+#v_matrix=test/(0.15*width*1000) # 6-9 m/s #artificially lowered
 #for col in v_matrix.columns:
  #   v_matrix[col].values[:] = 0.49
 print(v_matrix)
@@ -42,8 +44,25 @@ while dist_step*k<=length:
 	diststep.append(dist_step*k)
 	k+=1
     
+C_input=C=pd.DataFrame(0, index=v_matrix.index, columns=diststep)
+
+ALR1=(C_month["ALR1"].where(C_month["Month"]==C_input.index[0].month).mean())/(C_input.index.days_in_month*24*(60/time_min))
+ALR2=(C_month["ALR2"].where(C_month["Month"]==C_input.index[0].month).mean())/(C_input.index.days_in_month*24*(60/time_min))
+ALR3=(C_month["ALR3"].where(C_month["Month"]==C_input.index[0].month).mean())/(C_input.index.days_in_month*24*(60/time_min))
+C_flows=pd.DataFrame([[8000,ALR1],[25000,ALR2],[36000,ALR3]])
+
+#print(C_month["ALR1"].where(C_month["Month"]==C_input.index[0].month).mean())
+
+
+for i in range(len(C_flows)):
+        for j in range (len(C_input.columns.values)):
+            if j==(len(C_input.columns.values)-1) and (C_flows.iloc[i,0] >= C_input.columns.values[j]):
+                C_input.iloc[:,j]=C_flows.iloc[i,1]
+            elif (C_flows.iloc[i,0] >= C_input.columns.values[j]) and (C_flows.iloc[i,0] < C_input.columns.values[j+1]):
+                C_input.iloc[:,j]=C_flows.iloc[i,1]
+    
 C=pd.DataFrame(0, index=v_matrix.index, columns=diststep)
-C.iloc[0,0]=0.01
+#C.iloc[0,0]=0.01
 
 for j in range(len(v_matrix)-1):
         for i in range(len(diststep)-1):
@@ -60,9 +79,10 @@ for j in range(len(v_matrix)-1):
                 print("Unstable, 2Et/(x^2)=%f" % s2)
             if i==0:
                  C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1] #because C_x-1=0
-                 #C.iloc[j+1,i]+=0.01
+                 C.iloc[j+1,i]+=C_input.iloc[j+1,i]
             else:
                 C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1]+b3*C.iloc[j,i-1]
+                C.iloc[j+1,i]+=C_input.iloc[j+1,i]
             if i==len(diststep)-3:
                 #print(C.iloc[j+1,i])
                 C.iloc[j+1,i+2]=C.iloc[j+1,i] #providing extra column for C_(x=N)
@@ -85,4 +105,19 @@ plt.ylabel("Concentration (in mg/L)")
 plt.title("Nitrate Concentration in the Cowichan River from Lake Cowichan to Duncan")
 plt.legend()
 plt.show()
+
+#%%
+
+
+
+#print(v_matrix.index.month.mean())
+
+#C_month['Month'] = pd.to_datetime(C_month['Month'], format='%m')
+
+
+#print(C_month["ALR1"].where(C_month["Month"]==v_matrix.index.month.mean()))
+#C_month["Month"]=C_month["Month"].to_datetime
+
+
+                    
 

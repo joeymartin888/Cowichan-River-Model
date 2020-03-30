@@ -57,7 +57,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     #print (diststep)
     
     qroute=pd.DataFrame(0, index=q.index, columns=diststep)
-     
+    vroute=pd.DataFrame(0, index=q.index, columns=diststep) 
  
     lat_input=pd.DataFrame(0, index=q.index, columns=diststep)
     
@@ -82,7 +82,9 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     #print(lat_input)
     
     qroute.iloc[0,:]=q.iloc[0,0] #set initial conditions
+    vroute.iloc[0,:]=qroute.iloc[0,:]/(1000*width*((roughness*qroute.iloc[0,0])/(1.49*(slope**0.5)*300))**0.6) #reduced by 1000
     qroute.iloc[:,0]=q.iloc[:,0]
+    vroute.iloc[:,0]=q.iloc[:,0]/(1000*width*((roughness*q.iloc[:,0])/(1.49*(slope**0.5)*300))**0.6) #reduced by 1000
     step=(time_min*60.0)/dist_ft
     #print(step)
     beta=0.6 #confirm
@@ -93,12 +95,13 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     #print(qroute.iloc[1,0])
     #print(step+alpha*beta*((qroute.iloc[0,1]+qroute.iloc[1,0])/2)**(0.6-1))
     
-    #Acutal routing of the stream
+    #Actual routing of the stream
     for j in range(len(q)-1):
         for i in range(len(diststep)-1):
-            qroute.iloc[(j+1),(i+1)]=(step*qroute.iloc[(j+1),i]+alpha*beta*qroute.iloc[j,(i+1)]*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))/(step+alpha*beta*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))
+            qroute.iloc[j+1,i+1]=(step*qroute.iloc[(j+1),i]+alpha*beta*qroute.iloc[j,(i+1)]*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))/(step+alpha*beta*((qroute.iloc[j,(i+1)]+qroute.iloc[(j+1),i])/2)**(0.6-1))
             qroute.iloc[j+1,i+1]+=lat_input.iloc[j+1,i+1] #Insert inflow
             flow_depth=((roughness*qroute.iloc[j+1,i+1])/(1.49*(slope**0.5)*300))**0.6
+            vroute.iloc[j+1,i+1]=qroute.iloc[j+1,i+1]/(flow_depth*width*1000)
             #if j==1: 
              #   print(flow_depth)  #To check for flow depth for cross section
             celerity=((1.49*(slope**0.5))/(roughness))*(5.0/3.0)*(flow_depth**(2.0/3.0))
@@ -116,7 +119,7 @@ def route(time_min, dist_ft, Length, width, slope, roughness, up, lat_flows):
     newq["Downstream"]=qroute[Length]
     
     #return newq
-    return qroute
+    return vroute
     #return v_matrix
 
 #q["Whitehall"]=qroute.iloc[:,(len(qroute.columns)-1)]
