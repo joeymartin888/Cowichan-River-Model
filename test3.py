@@ -16,7 +16,7 @@ import matplotlib.figure as fig
 import matplotlib.dates as mdates
 import calendar
 
-date_range=[pd.Timestamp('2012-06-01'), pd.Timestamp('2012-06-30')]
+date_range=[pd.Timestamp('2012-06-01'), pd.Timestamp('2012-09-01')]
 data=pd.read_csv("Lake_Cowichan_Historical_Daily.csv") #daily historical data
 del data["PARAM"], data["SYM"], data[" ID"]
 data["Date"]=pd.to_datetime(data["Date"])
@@ -113,10 +113,10 @@ for j in range(len(v_matrix)-1):
              C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1] #because C_x-1=0
              if C.iloc[j+1,i]<0:
                  print("%.4f, %.4f" % (b1, b2))
-             C.iloc[j+1,i]=(C.iloc[j+1,i]*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09)
+             C.iloc[j+1,i]=(C.iloc[j+1,i]*(1/1000)*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09/1000)
         else:
             C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1]+b3*C.iloc[j,i-1]
-            C.iloc[j+1,i]=(C.iloc[j+1,i]*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09)
+            C.iloc[j+1,i]=(C.iloc[j+1,i]*(1/1000)*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09/1000)
         if i==len(diststep)-3:
             #print(C.iloc[j+1,i])
             C.iloc[j+1,i+2]=C.iloc[j+1,i] #providing extra column for C_(x=N)
@@ -145,6 +145,7 @@ plt.title("Nitrate Concentrations at Lake Cowichan and Duncan from %s 01-02 %s" 
 plt.legend()
 plt.show()
 
+print(C)
 
 #print("Integral of Upstream = %.3f" % sum(C[0]))
 #print("Integral of Downstream = %.3f" % sum(C[(length-dist_step)]))
