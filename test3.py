@@ -8,27 +8,26 @@ Kelsey Shaw, University of Victoria
 Andrew Freiburger, University of Victoria
 """
 import pandas as pd
-import KWE2 as KWE
+import KWE as KWE
+import ADRE as ADRE
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.figure as fig
-import matplotlib.dates as mdates
 import calendar
 
-date_range=[pd.Timestamp('2012-06-01'), pd.Timestamp('2012-09-01')]
-data=pd.read_csv("Lake_Cowichan_Historical_Daily.csv") #daily historical data
+
+date_range=[pd.Timestamp('2010-01-01'), pd.Timestamp('2010-04-01')]
+data=pd.read_csv("Data/Lake_Cowichan_Historical_Daily.csv") #daily historical data
 del data["PARAM"], data["SYM"], data[" ID"]
 data["Date"]=pd.to_datetime(data["Date"])
 data=data.where((data["Date"]>=date_range[0]) & (data["Date"] <= date_range[1])).dropna(axis=0)
 
-
-data_down=pd.read_csv("Duncan_Historical_Daily.csv") #daily historical data
+data_down=pd.read_csv("Data/Duncan_Historical_Daily.csv") #daily historical data
 del data_down["PARAM"], data_down["SYM"], data_down[" ID"]
 data_down["Date"]=pd.to_datetime(data_down["Date"])
 data_down=data_down.where((data_down["Date"]>=date_range[0]) & (data_down["Date"] <= date_range[1])).dropna(axis=0)
 
-C_month=pd.read_csv("Monthly_Nitrogen_Loading.csv")
+C_month=pd.read_csv("Data/Monthly_Nitrogen_Loading.csv")
 time_min=0.5 #delta t
 dist_step=3800 #delta x
 length=38000+dist_step #River Length
@@ -36,7 +35,7 @@ width=25 #River Width
 slope=0.005
 roughness=0.035 #Manning’s roughness constant (this is Lehigh River value)'
 decay_coeff=0.015 
-E=7.5
+disp_coeff=7.5
 
 "Expand and interpolate downstream observations this is done inside the KWE function for upstream observations"
 start=data_down.iloc[0,0]
@@ -50,113 +49,54 @@ dd=x.reindex(new_index).interpolate()
 print(data)
 #%%
 lat_flows=pd.DataFrame([[8000,pd.Timestamp('2020-03-17T07'),0],[25000,pd.Timestamp('2020-03-20T06'),0],[32000,pd.Timestamp('2020-03-18T09'),0]])
-"""Inflows can be put into the DataFrame in the format [distance along river, time 
-(type Timestamp), Q_cfs]. Any number can be put in."""
+"""Inflows and outflows for point sources can be put into the DataFrame in the format [distance along river, time 
+(type Timestamp), Q_cfs]. Any number can be put in.  Currently this is not in use, but could be used for the
+Crofton pulp mill."""
 
 #test=KWE.route(time_min, dist_step, length, width, slope, roughness, data, lat_flows) #returns the q route matrix
 
-
-diststep=[]
+"""This block is temporary until proper velocities are calculated."""
+diststep=[] 
 k=0
-while dist_step*k<=length:
+while dist_step*k<=length: #This would be done inside the KWE function normally.
 	diststep.append(dist_step*k)
 	k+=1
-    
-v_matrix=pd.DataFrame(0.003, index=dd.index, columns=diststep)
+v_matrix=pd.DataFrame(0.003, index=dd.index, columns=diststep) #"Model-friendly" velocity
 
-#v_matrix=test
-#for col in v_matrix.columns:
-    #v_matrix[col].values[:] = 0.49
 print(v_matrix)
 
-    
-C_input=C=pd.DataFrame(0, index=v_matrix.index, columns=diststep)
+flow_depth=0.09 #A rough average based on KWE calculations, ideally this would be returned from KWE 
 
-ALR1=(436642617*1000/(width*dist_step*0.09))/(C_input.index.days_in_month*24*60*(60/time_min))
-ALR2=(36767350*1000/(width*dist_step*0.09))/(C_input.index.days_in_month*24*60*(60/time_min))
-ALR3=(5766103058*1000/(width*dist_step*0.09))/(C_input.index.days_in_month*24*60*(60/time_min))
-C_flows=pd.DataFrame([[750,ALR1],[25750,ALR2],[32500,ALR3]])
+C=ADRE.route(time_min, dist_step, width, flow_depth, v_matrix, disp_coeff, decay_coeff)
 
-#print(C_month["ALR1"].where(C_month["Month"]==C_input.index[0].month).mean())
-
-
-for i in range(len(C_flows)):
-        for j in range (len(C_input.columns.values)):
-            if j==(len(C_input.columns.values)-1) and (C_flows.iloc[i,0] >= C_input.columns.values[j]):
-                C_input.iloc[:,j]=C_flows.iloc[i,1]
-            elif (C_flows.iloc[i,0] >= C_input.columns.values[j]) and (C_flows.iloc[i,0] < C_input.columns.values[j+1]):
-                C_input.iloc[:,j]=C_flows.iloc[i,1]
-
-print(C_input)
-  
-C=pd.DataFrame(0, index=v_matrix.index, columns=diststep)
-C.insert(loc=0, column='Initial', value=0.033)
-#C.iloc[0,0]=100
-print("here")
-
-for j in range(len(v_matrix)-1):
-    if (j%1000)==0: #progress metre
-        print(((j*100.0)/len(v_matrix)))
-    for i in range(1,(len(diststep)-1)):
-        b1=(time_min*60)*(1.0/(time_min*60)-(2.0*E)/(dist_step**2)-decay_coeff)
-        b2=(time_min*60)*((-v_matrix.iloc[j,i])/(2*dist_step)+E/(dist_step**2))
-        b3=(time_min*60)*((v_matrix.iloc[j,i])/(2*dist_step)+E/(dist_step**2))
-        s1=((time_min*60*v_matrix.iloc[j,i])/dist_step)**2
-        s2=(2*E*time_min*60)/(dist_step**2)
-        if (s1<0):
-            print("Unstable, (Ut/x)^2=%f" % s1)
-        if (s1>s2):
-            print("Unstable, (Ut/x)^2=%f 2Et/(x^2)=%f" % (s1,s2))
-        if (s2>1):
-            print("Unstable, 2Et/(x^2)=%f" % s2)
-        if i==0:
-             C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1] #because C_x-1=0
-             if C.iloc[j+1,i]<0:
-                 print("%.4f, %.4f" % (b1, b2))
-             C.iloc[j+1,i]=(C.iloc[j+1,i]*(1/1000)*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09/1000)
-        else:
-            C.iloc[j+1,i]=b1*C.iloc[j,i]+b2*C.iloc[j,i+1]+b3*C.iloc[j,i-1]
-            C.iloc[j+1,i]=(C.iloc[j+1,i]*(1/1000)*(width*dist_step*0.09)+C_input.iloc[j+1,i])/(width*dist_step*0.09/1000)
-        if i==len(diststep)-3:
-            #print(C.iloc[j+1,i])
-            C.iloc[j+1,i+2]=C.iloc[j+1,i] #providing extra column for C_(x=N)
-
-del C[length]            
-print(C) #Negative numbers and (some?) conservation of mass...
-
-#%%"""
-
-"""Plot the upstream and downstream hydrographs on the same plot."""
-
-
-
-"""ACC=np.corrcoef(dd["Value"],test[(length-dist_step)])[1,0]
-print(ACC)"""
+"""Plot the hydrographs of various distance steps on the same plot -
+19000 and 26600 have means printed vice plotting in order to maintain scale."""
 
 x=C.index
 fig, ax = plt.subplots()
-ax.plot(C.index, C[0], label="Upstream")
-ax.plot(C.index, C[(length-dist_step)], label="Downstream")
+for d in diststep:
+    if d==length:
+        break
+    elif d==22800:
+        ax.plot(C.index, C[d], label="ALR2")
+    elif d==30400:
+        ax.plot(C.index, C[d], label="ALR3")
+    elif d==0:
+        ax.plot(C.index, C[d], label="Upstream")
+    elif d==26600:
+        print C[d].mean()
+    elif d==19000:
+        print C[d].mean()
+    elif d==(length-dist_step):
+        ax.plot(C.index, C[d], label="Downstream")
+    else:
+        ax.plot(C.index, C[d], label=("%i" % d))
 plt.xlabel("Time (Day and Hour) - timestep = %.2f min" % time_min)	
 fig.autofmt_xdate(bottom=None, rotation=30)
-#ax.fmt_xdata = mdates.DateFormatter('%d')
 plt.ylabel("Concentration (mg/L)")
-plt.title("Nitrate Concentrations at Lake Cowichan and Duncan from %s 01-02 %s" % ((calendar.month_name[start.month]), end.year))
+plt.title("Nitrate Concentrations at Lake Cowichan and Duncan from %s %s to %s %s" % ((calendar.month_name[start.month]), start.year ,(calendar.month_name[end.month]), end.year))
 plt.legend()
 plt.show()
-
-print(C)
-
-#print("Integral of Upstream = %.3f" % sum(C[0]))
-#print("Integral of Downstream = %.3f" % sum(C[(length-dist_step)]))
-
-#print(v_matrix.index.month.mean())
-
-#C_month['Month'] = pd.to_datetime(C_month['Month'], format='%m')
-
-
-#print(C_month["ALR1"].where(C_month["Month"]==v_matrix.index.month.mean()))
-#C_month["Month"]=C_month["Month"].to_datetime
 
 
                     
